@@ -46,11 +46,30 @@ The approach scripts import `nerlib.py` as a sibling module, so run them from
 inside `scripts/`. Step 5 takes about 10 minutes; everything else is seconds to
 a couple of minutes.
 
-To measure whether augmentation helped:
+To measure whether augmentation helped — same features, same tuning grid, same
+test set, so the training data is the only difference:
 
 ```bash
-cd scripts && ../.venv/bin/python approach_crf.py --train-file train_small_aug
+cd scripts && ../.venv/bin/python approach_crf.py --train-file train_small_aug --tag crf_aug
 ```
+
+```bash
+cd scripts && ../.venv/bin/python augmentation_effect.py
+```
+
+## Results
+
+Test set, entity level, exact span matching:
+
+| approach | micro P | micro R | micro F1 | macro F1 |
+|---|---|---|---|---|
+| Gazetteer | 0.266 | 0.477 | 0.342 | 0.324 |
+| **CRF** | 0.665 | 0.635 | **0.650** | **0.580** |
+| spaCy (pre-trained, zero-shot) | 0.419 | 0.390 | 0.404 | 0.233 |
+
+The three do not fail on the same entities. Together they get **78.0%** of gold
+entities right against **63.5%** for the CRF alone, and all three agree on only
+**21.6%**.
 
 ## Design decisions worth knowing
 

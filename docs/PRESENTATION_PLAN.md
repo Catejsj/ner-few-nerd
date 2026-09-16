@@ -277,9 +277,14 @@ after    Angela Merkel visited New York .
   followed by `I-person`
 - Features per token: word, shape (`Xxxxx`), capitalisation, prefix/suffix,
   lemma, POS — **plus all of that for the 2 tokens on each side**
-- `c1` and `c2` (L1 and L2 penalties) tuned on validation
+- `c1` and `c2` (L1 and L2 penalties) tuned on validation → **0.1 / 0.1**
 - Trained on a **20,000-sentence subsample** — memory, not choice
-- **It will tell you what it learned** — show the transition weights
+- **Best of the three: micro F1 0.650, macro 0.580**
+- **It will tell you what it learned** — worth showing:
+  - `word.shape:XxXxxx` → **B-person** (the *McDonald* / *DiCaprio* pattern)
+  - `-1:word.lower:album` and `-1:word.lower:film` → **B-art**
+  - `word.lemma:airport`, `library`, `hospital` → **I-building**
+  - `O → I-organization` weight **−7.58** — it learned that is impossible
 
 ### Slide C: "Approach 3 — spaCy, pre-trained"
 
@@ -353,24 +358,59 @@ copied from that file after the final run.
   match
 - A span that overlaps but starts one token early is a false positive **and**
   leaves the gold entity as a false negative — punished twice (CoNLL convention)
-- **micro** = every entity counts equally → dominated by the big three types
-- **macro** = every type counts equally → punishes ignoring rare types
-- Headline table: `figures/fig1_headline_f1.png`
+
+| approach | micro P | micro R | **micro F1** | 95% CI | macro F1 |
+|---|---|---|---|---|---|
+| Gazetteer | 0.266 | 0.477 | **0.342** | [0.339, 0.345] | 0.324 |
+| **CRF** | 0.665 | 0.635 | **0.650** | [0.646, 0.653] | **0.580** |
+| spaCy | 0.419 | 0.390 | **0.404** | [0.400, 0.408] | 0.233 |
+
+- **micro** = every entity counts equally; **macro** = every type counts equally
+- spaCy's micro–macro gap (0.404 → 0.233) is the largest — it works on the
+  common types and collapses on the rare ones
+- Figure: `figures/fig1_headline_f1.png`
 
 ### Slide B: "Per type, and where each one breaks"
 
 - `figures/fig2_per_type_f1.png`
-- No approach wins on every type — that is the argument for reporting three
-- spaCy's zero on *building* is structural, not a failure of the model
+
+| type | support | Gazetteer | CRF | spaCy |
+|---|---|---|---|---|
+| location | 27,235 | 0.581 | **0.737** | 0.571 |
+| person | 21,565 | 0.361 | **0.775** | 0.599 |
+| organization | 19,078 | 0.250 | **0.571** | 0.267 |
+| other | 9,558 | 0.349 | **0.463** | 0.029 |
+| product | 6,231 | 0.283 | **0.444** | 0.075 |
+| building | 5,007 | 0.342 | **0.543** | 0.000 |
+| event | 4,104 | 0.361 | **0.514** | 0.145 |
+| art | 4,064 | 0.066 | **0.597** | 0.174 |
+
+- The CRF wins every type — but *how far* it wins varies enormously
+- spaCy's **0.000 on building is structural**, not a failure of the model
+- The gazetteer's **0.066 on art** is the ordinary-words problem: *It*,
+  *Yesterday* and *Tonight* are all song titles
 
 ### Slide C: "The errors, categorised"
 
 - `figures/fig3_error_breakdown.png` and `figures/fig4_confusion.png`
-- Every mistake is one of five kinds: **type error** (right span, wrong type),
-  **boundary error** (overlapping span, right type), **type + boundary**,
-  **missed** (nothing predicted), **spurious** (predicted where nothing is)
-- The distinction matters: a boundary error means the model nearly had it; a
-  missed entity means it had no evidence at all
+
+| of 96,842 gold entities | Gazetteer | CRF | spaCy |
+|---|---|---|---|
+| correct | 47.7% | **63.5%** | 39.0% |
+| type error (right span, wrong label) | 5.8% | 14.6% | 20.2% |
+| boundary error (right type, mis-cut) | 17.0% | 6.8% | 12.0% |
+| type + boundary | 13.8% | 5.1% | 12.9% |
+| missed (nothing predicted) | 15.7% | 9.9% | 16.0% |
+| **spurious** (predicted where nothing is) | **95.1%** | 6.9% | 10.3% |
+
+- **The gazetteer predicts almost as many phantom entities as there are real
+  ones** — 92,139 spurious against 96,842 gold
+- Most CRF mistakes are entities it **did** find and then mis-labelled (14.6%),
+  not entities it missed (9.9%)
+- Worst confusion for every approach: **organization ↔ location**
+- Ensemble result: the three together get **78.0%** of gold entities right,
+  against **63.5%** for the CRF alone. The CRF uniquely finds 15,026, the
+  gazetteer 8,648, spaCy 2,783 — **all three agree on only 21.6%**
 
 ### Say (about 4 minutes)
 
@@ -397,14 +437,27 @@ copied from that file after the final run.
 > very different problems: a boundary error is nearly-right and a better feature
 > set fixes it, while a missed entity means the model had no evidence.
 >
-> [Walk through fig4, the confusion matrix.] Each row is a true type and shows
-> where those entities ended up. The MISSED column is the interesting one.
+> The row that surprised us is "spurious" for the gazetteer: ninety-five per
+> cent. It predicts almost as many entities that are not there as there are real
+> entities in the whole test set. That is the ordinary-words problem — once "It"
+> is in the dictionary as a song title, it matches every pronoun.
 >
-> The last result is about the three together. We checked which entities each
-> approach uniquely finds — entities no other approach gets right. They are not
-> the same entities. A perfect combination of the three would reach substantially
-> higher recall than any one of them alone, and that gap is our main future work
-> item.
+> And for the CRF, most mistakes are entities it *did* find and then labelled
+> wrongly — fifteen per cent — rather than entities it missed, which is ten per
+> cent. That is a more hopeful kind of error: the model has the evidence, it just
+> picked the wrong type.
+>
+> [Walk through fig4, the confusion matrix.] Each row is a true type and shows
+> where those entities ended up. Organization and location confuse each other for
+> every approach, which makes sense — "Manchester United" and "Manchester".
+>
+> The last result is about the three together. The CRF uniquely finds fifteen
+> thousand entities no other approach gets. But the gazetteer uniquely finds
+> another eight and a half thousand, and spaCy nearly three thousand. All three
+> agree on only twenty-one per cent. Together they would reach seventy-eight per
+> cent of all gold entities against sixty-three for the CRF alone. They are not
+> three attempts at the same thing — they see different entities, and that gap is
+> our main future work item.
 
 ---
 

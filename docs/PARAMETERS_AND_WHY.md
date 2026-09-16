@@ -224,10 +224,12 @@ not world knowledge. It would **not** be acceptable for fine-tuning a language
 model, which implausible text can damage. We say this in the report ourselves.
 
 **Did it help?**
-That is an empirical question and the answer is in
-`reports/07_augmentation_effect.txt`, produced by rerunning the CRF with
-`--train-file train_small_aug`. Report whichever way it went — a negative result
-honestly reported is worth more than a positive one quietly obtained.
+Measured, not asserted: `scripts/augmentation_effect.py` reruns the CRF on the
+augmented file with the same features, the same tuning grid and the same test
+set, so the only difference is the training data. The result is in
+`reports/07_augmentation_effect.txt` — read it before the presentation and quote
+whichever way it went. A negative result honestly reported is worth more than a
+positive one quietly obtained.
 
 ---
 
@@ -279,8 +281,16 @@ quietly flatter every model by deleting some of its own false positives.
 | **86.8% vs 7.5%** | capitalised entity tokens vs other tokens — why we keep case |
 | **7.8%** | of entities contain a stopword — why we do not remove them |
 
-Plus the three final F1 scores from `reports/06_comparison.txt`, which must be
-copied after the final run rather than remembered from a draft.
+**The three results** (test, entity level, exact span match):
+
+| approach | micro F1 | macro F1 |
+|---|---|---|
+| Gazetteer | 0.342 | 0.324 |
+| **CRF** | **0.650** | **0.580** |
+| spaCy (pre-trained) | 0.404 | 0.233 |
+
+**78.0%** — what all three together get right, against 63.5% for the CRF alone.
+**21.6%** — how much all three agree on. They see different entities.
 
 ---
 
