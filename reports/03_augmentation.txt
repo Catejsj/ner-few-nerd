@@ -1,0 +1,89 @@
+[1] WHY AUGMENT AT ALL
+    Base file: train_small, 20,000 sentences, 51,755 entities.
+    The full training split has 131,767 sentences, but the CRF is fitted
+    on a subsample for memory reasons, so from the CRF's point of view
+    this IS a limited-data setting - which is the condition the rubric
+    asks augmentation to be justified by.
+
+    entity counts in the base file
+      location        14,731
+      person          11,466
+      organization     9,846
+      other            5,226
+      product          3,424
+      building         2,702  <- targeted
+      art              2,197  <- targeted
+      event            2,163  <- targeted
+
+    Targeting the 3 rarest types: art, building, event.
+
+[2] WHY MENTION REPLACEMENT AND NOT THE OTHER METHODS
+    random deletion   shifts every label after the deleted token
+    random insertion  can land inside an entity and corrupt its span
+    back-translation  returns different token boundaries with no way to
+                      map the old labels onto the new tokens
+    mention replacement  keeps the sentence and swaps one entity for
+                      another of the same type; the labels are rebuilt
+                      around the new length, so they stay correct.
+    Reference: Dai and Adel (2020), 'An Analysis of Simple Data
+    Augmentation for Named Entity Recognition'.
+
+[3] THE MENTION BANK
+    Built from the full TRAINING split (never validation or test).
+      art             11,936 distinct surface forms  <- used
+      building        12,840 distinct surface forms  <- used
+      event            8,989 distinct surface forms  <- used
+      location        33,542 distinct surface forms
+      organization    42,139 distinct surface forms
+      other           20,463 distinct surface forms
+      person          48,399 distinct surface forms
+      product         16,402 distinct surface forms
+
+[4] RESULT
+    type             before    after    change
+    location         14,731   22,241     +51%
+    person           11,466   17,994     +57%
+    organization      9,846   13,702     +39%
+    other             5,226    6,020     +15%
+    product           3,424    3,884     +13%
+    building          2,702    8,106    +200%
+    art               2,197    6,591    +200%
+    event             2,163    6,489    +200%
+
+    sentences  20,000 -> 29,410 (+9,410 augmented)
+    entities   51,755 -> 85,027
+
+    Note the non-targeted types grow too. An augmented sentence keeps its
+    other entities, so a sentence containing both an art entity and a
+    person contributes that person again. The targeted types still grow
+    fastest, which is the point.
+
+[5] WORKED EXAMPLES
+    before  It is downstream of the Longyangxia Dam and upstream from the Lijiaxia Dam .
+    after   It is downstream of the Ara Pacis Augustae and upstream from the Skydome .
+      entities before: [('building', 'Longyangxia Dam'), ('building', 'Lijiaxia Dam')]
+      entities after:  [('building', 'Ara Pacis Augustae'), ('building', 'Skydome')]
+
+    before  Local DJs are heard during the day and the syndicated `` Nights with Alice Cooper `` show is heard evenings .
+    after   Local DJs are heard during the day and the syndicated `` `` Love Rock Revolution Girl Style Now `` show is heard evenings .
+      entities before: [('art', 'Nights with Alice Cooper')]
+      entities after:  [('art', '`` Love Rock Revolution Girl Style Now')]
+
+    before  The 2020 Toledo Rockets football team represented the University of Toledo during the 2020 NCAA Division I FBS football season .
+    after   The 2020 Toledo Rockets football team represented the University of Toledo during the 2020 Battle of the Philippine Sea football season .
+      entities before: [('organization', 'Toledo Rockets'), ('organization', 'University of Toledo'), ('event', 'NCAA Division I FBS')]
+      entities after:  [('organization', 'Toledo Rockets'), ('organization', 'University of Toledo'), ('event', 'Battle of the Philippine Sea')]
+
+[6] THE HONEST WARNING
+    Mention replacement produces sentences that are often factually
+    absurd - a director being released as a film, a war fought in a
+    museum. That is acceptable for a CRF, which learns from surface
+    patterns and context words, not from world knowledge. It would NOT be
+    acceptable if we were fine-tuning a language model, which can be
+    damaged by implausible text.
+
+    Whether it actually helped is an empirical question, answered by
+    rerunning the CRF on this file:
+      ./.venv/bin/python scripts/approach_crf.py --train-file train_small_aug
+    and comparing reports/04_crf.txt before and after. The comparison is
+    recorded in reports/07_augmentation_effect.txt.

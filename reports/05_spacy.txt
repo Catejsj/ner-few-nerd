@@ -1,0 +1,76 @@
+[1] MODEL
+    model            en_core_web_sm v3.8.0
+    trained on       OntoNotes 5
+    licence          MIT
+    entity types     18 OntoNotes types
+    training data    OntoNotes 5 - news, telephone speech, weblogs.
+                     Few-NERD is Wikipedia. This is a domain shift, and
+                     it is a fair part of what we are measuring: how far
+                     an off-the-shelf model transfers.
+    NOT fine-tuned on Few-NERD. Zero training sentences were used.
+
+[2] TOKENIZATION ALIGNMENT
+    If we let spaCy tokenize the raw sentence text, it produces a
+    different token sequence from Few-NERD's in 922 of 3,000 sentences (30.7%).
+    Every one of those would misalign the labels.
+    We therefore pass the gold tokens in directly with Doc(words=...),
+    which turns the tokenizer off. Alignment is then exact by
+    construction, and the comparison measures NER, not tokenization.
+
+[3] LEARNING THE LABEL MAPPING  (on validation only)
+    'fired' is how many spans spaCy predicted with that label.
+    'exact hits' is how many of those exactly match a gold Few-NERD span.
+    'purity' is how consistently those hits point at one Few-NERD type -
+    low purity means the mapping is a compromise, not a translation.
+
+    OntoNotes         fired  exact hits -> Few-NERD        purity
+    ORG              14,969       7,343 organization       43.9%
+    PERSON           11,935       9,555 person             72.8%
+    DATE             10,025          49 (dropped)       
+    GPE               8,904       6,963 location           83.8%
+    CARDINAL          4,628          61 (dropped)       
+    NORP              3,299       2,068 location           69.7%
+    LOC               1,513         765 location           79.6%
+    ORDINAL           1,495           3 (dropped)       
+    WORK_OF_ART       1,432         554 art                58.3%
+    FAC               1,409         750 location           47.7%
+    PRODUCT             933         495 product            30.1%
+    EVENT               776         239 event              83.3%
+    MONEY               305           1 (dropped)       
+    QUANTITY            272           1 (dropped)       
+    LAW                 227          52 other              26.9%
+    TIME                208           3 (dropped)       
+    PERCENT             201           1 (dropped)       
+    LANGUAGE            121         100 other              58.0%
+
+    Final mapping: EVENT->event, FAC->location, GPE->location, LANGUAGE->other, LAW->other, LOC->location, NORP->location, ORG->organization, PERSON->person, PRODUCT->product, WORK_OF_ART->art
+
+    Numeric types (CARDINAL, DATE, MONEY, ORDINAL, PERCENT, QUANTITY, TIME) are dropped:
+    Few-NERD has no type for dates, money or counts, so predicting them
+    can only produce false positives. Dropping them is the mapping
+    decision that most helps spaCy's score, and we state it openly.
+
+[4] RESULT ON TEST  (entity level, exact span match)
+    type                 P       R      F1   support      TP      FP      FN
+    location         0.548   0.596   0.571    27,235  16,233  13,366  11,002
+    person           0.572   0.628   0.599    21,565  13,542  10,129   8,023
+    organization     0.218   0.342   0.267    19,078   6,533  23,394  12,545
+    other            0.243   0.016   0.029     9,558     150     467   9,408
+    product          0.160   0.049   0.075     6,231     305   1,602   5,926
+    building         0.000   0.000   0.000     5,007       0       0   5,007
+    event            0.262   0.101   0.145     4,104     413   1,162   3,691
+    art              0.206   0.151   0.174     4,064     613   2,365   3,451
+    micro avg        0.419   0.390   0.404    96,842
+    macro avg        0.276   0.235   0.233
+
+    micro F1 0.404, macro F1 0.233
+
+    Read this as a transfer result, not as spaCy's quality. On OntoNotes
+    text this model scores about 0.85 F1. Here it is being asked to
+    predict a different label scheme on a different domain with no
+    training, so the gap is the cost of the mismatch.
+
+[5] WHAT IT CANNOT DO BY DESIGN
+    Few-NERD types no OntoNotes label maps onto: building
+    Those types are 5,007 test entities (5.2%) that spaCy cannot
+    score above zero on, no matter how good it is.

@@ -1,0 +1,108 @@
+[1] TOKENIZATION
+    We did not tokenize. Few-NERD ships pre-tokenized sentences, and the
+    labels are aligned to those exact tokens. Re-tokenizing would shift
+    every label by an unknown amount.
+
+    Few-NERD's own tokenization follows the Wikipedia dump processing in
+    Ding et al. (2021): Penn Treebank style, so clitics are split
+    ("People 's Republic of China") and punctuation is its own token.
+
+    This matters for the spaCy approach. spaCy runs its own tokenizer, so
+    it can split a token Few-NERD kept whole, and then its predicted spans
+    do not line up with the gold spans. scripts/approach_spacy.py handles
+    this by feeding spaCy the gold tokens directly with Doc(words=...),
+    which disables its tokenizer and forces alignment. The measured
+    mismatch if we had not done that is reported in reports/05_spacy.txt.
+
+    training sentences        131,767
+    tokens per sentence       mean 24.5, min 1, max 267
+
+[2] NORMALIZATION  (applied)
+    Applied per token, without changing how many tokens there are:
+      - Unicode NFKC, so a full-width or composed character becomes its
+        ordinary form and does not become its own vocabulary entry
+      - curly quotes and dashes folded to ASCII
+      - stray whitespace inside a token removed
+    1,280 tokens changed in the first 20,000 sentences.
+      '–' -> '-'   x194
+      '’' -> "'"   x189
+      '“' -> '"'   x56
+      '”' -> '"'   x55
+      '‘' -> "'"   x22
+      '—' -> '-'   x19
+
+    Case is NOT normalised. Measurement in [3].
+
+[3] LOWERCASING  (deliberately NOT applied)
+    86.8% of entity tokens start with a capital letter.
+    7.5% of non-entity tokens do.
+    Capitalisation is the single strongest surface clue an English NER
+    system has. Lowercasing the text would delete it, so we keep case and
+    give the models capitalisation as an explicit feature instead.
+
+[4] STOPWORD REMOVAL  (deliberately NOT applied)
+    26,375 of 340,180 entities (7.8%) contain at least one
+    stopword. Removing stopwords would break every one of them:
+      World War I                        x133
+      the United States                  x74
+      University of California           x54
+      The New York Times                 x42
+      University of Michigan             x31
+      University of Toronto              x30
+      University of Oxford               x28
+      The Guardian                       x27
+
+    It would also destroy the token-label alignment for the whole
+    sentence, because the labels are positional. Stopword removal is a
+    document-classification technique; it does not transfer to sequence
+    labelling.
+
+[5] STEMMING AND LEMMATIZATION  (not on the sequence, yes as a feature)
+    We do not stem or lemmatize the text itself: the output of NER is a
+    span of the original sentence, and 'Univers of Californ' is not a span
+    of anything.
+
+    We do use the lemma as one CRF feature among many, which is the
+    standard way to get the benefit without damaging the text:
+      Games        stem -> game       lemma -> game
+      Studies      stem -> studi      lemma -> study
+      Airlines     stem -> airlin     lemma -> airline
+      Brothers     stem -> brother    lemma -> brother
+      Islands      stem -> island     lemma -> island
+    The lemma helps the model learn that 'Islands' and 'Island' behave the
+    same way inside a location name, while the surface form is still there
+    for the model to use.
+
+[6] SHAPE FEATURE  (applied, as a feature)
+    Every token gets a shape string: capitals become X, lowercase x,
+    digits d. This lets the CRF generalise over words it has never seen.
+    Most common shapes inside entities:
+      Xxxxx        63,919
+      Xxxx          9,584
+      Xxx           4,904
+      xxxx          4,675
+      xx            2,661
+      XXX           1,899
+
+[7] TRAINING SUBSAMPLE FOR THE CRF
+    20,000 sentences drawn at random from the 131,767 training sentences,
+    seed 42. Entities in the sample:
+      location        14,731
+      person          11,466
+      organization     9,846
+      other            5,226
+      product          3,424
+      building         2,702
+      art              2,197
+      event            2,163
+
+    Why subsample: the CRF feature set produces roughly two million
+    features over the full training set, which does not fit in memory on
+    the machine we are using. The gazetteer and spaCy approaches use the
+    full training set, and the learning curve in reports/04_crf.txt shows
+    what the CRF gives up.
+
+[8] AUGMENTATION
+    Handled separately in scripts/augment.py, because for NER the useful
+    method is entity replacement, not the word-level swap and deletion the
+    rubric lists. See reports/03_augmentation.txt.

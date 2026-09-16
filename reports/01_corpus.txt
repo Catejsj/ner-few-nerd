@@ -1,0 +1,99 @@
+[1] SOURCE
+    dataset     Few-NERD (Ding et al., ACL-IJCNLP 2021)
+    paper       'Few-NERD: A Few-shot Named Entity Recognition Dataset'
+    setting     SUPERVISED  (all sentences, standard train/dev/test)
+    licence     CC BY-SA 4.0 - reuse and redistribution with attribution
+    built from  English Wikipedia, which is CC BY-SA 4.0 itself
+    obtained    HuggingFace mirror DFKI-SLT/few-nerd, parquet format
+
+    Few-NERD also ships INTRA and INTER splits, which hold out whole
+    entity types for few-shot experiments. We use SUPERVISED because our
+    question is ordinary supervised NER, not few-shot transfer.
+
+[2] SIZE
+    split          sentences       tokens   entities  mean sent len
+    train            131,767    3,227,563    340,180           24.5
+    validation        18,824      463,214     48,741           24.6
+    test              37,648      921,118     96,842           24.5
+    TOTAL            188,239    4,611,895    485,763
+
+    The split is the one published with the dataset. We did not re-split:
+    re-splitting a corpus built from Wikipedia risks putting sentences
+    from the same article on both sides, which leaks entities into test.
+
+[3] CLASS BALANCE  (entity counts, training split)
+    type               entities    share       test
+    location             95,339   28.0%     27,235
+    person               75,945   22.3%     21,565
+    organization         66,920   19.7%     19,078
+    other                33,611    9.9%      9,558
+    product              21,835    6.4%      6,231
+    building             17,599    5.2%      5,007
+    art                  14,870    4.4%      4,064
+    event                14,061    4.1%      4,104
+
+    Most common type is location (95,339), least common is event (14,061).
+    The imbalance ratio is 6.8 to 1, which is mild as NER corpora go.
+    Every type has tens of thousands of examples, so no type is starved.
+
+    The real imbalance is not between the types, it is between entity and
+    non-entity: 680,543 of 3,227,563 training tokens are inside an entity, or 21.1%.
+    A model that predicted O everywhere would be 78.9% accurate at the token
+    level and would find zero entities. That is why we report entity-level
+    precision, recall and F1 and never token accuracy.
+
+[4] WHY 8 COARSE TYPES AND NOT 66 FINE TYPES
+    Few-NERD labels 66 fine-grained types nested under the 8 coarse ones
+    (person-actor, person-politician, building-airport, and so on).
+    We model the 8 coarse types for three reasons:
+      - The rubric requires a pre-trained spaCy model as one of the three
+        approaches. spaCy's English model predicts 18 OntoNotes types; it
+        cannot produce 66 Few-NERD types, so a 66-way comparison would be
+        impossible for one of the three required approaches.
+      - A gazetteer over 66 types would be 66 lists competing for the same
+        surface forms, and the ambiguity would dominate the result.
+      - Entity-level error analysis over 66 types is a 66x66 confusion
+        matrix that nobody can read in a presentation.
+    The fine labels are kept in the raw files, so the choice is reversible.
+
+[5] ENTITY LENGTH  (how many tokens an entity spans, training split)
+    1 token(s)     146,911   43.2%
+    2 token(s)     112,458   33.1%
+    3 token(s)      46,147   13.6%
+    4 token(s)      19,067    5.6%
+    5 token(s)       8,188    2.4%
+    6 token(s)       3,678    1.1%
+    7 or more        3,731    1.1%
+    Multi-token entities are the majority, which is why the evaluation
+    has to be entity-level with exact span matching, not token-level.
+
+[6] LABEL REPRESENTATION
+    Few-NERD releases IO tags: one label per token, no B- or I- prefix.
+    We convert to BIO, where B- marks the first token of an entity and
+    I- marks continuation. BIO is what sklearn-crfsuite, seqeval and
+    spaCy all use, so the three approaches stay comparable.
+    We did not use BIOES (which adds E- for the last token and S- for
+    single-token entities). BIOES gives a CRF more signal but doubles the
+    label count, and the published Few-NERD baselines use BIO.
+
+    Cost of the conversion: two entities of the same type that touch with
+    no token in between merge into one. The released data does not mark
+    that boundary, so it is unrecoverable. See the limitations.
+
+[7] LEGAL AND ETHICAL NOTES
+    - Few-NERD is released under CC BY-SA 4.0. We may use, modify and
+      redistribute it as long as we credit the authors and share alike.
+      The paper is cited in the references slide.
+    - The underlying text is English Wikipedia, which is publicly
+      available and licensed CC BY-SA 4.0, so there is no scraping and no
+      terms of service issue.
+    - Personal data: the corpus contains person names by design - it is a
+      named entity dataset. Those names are public figures already
+      documented on Wikipedia, not private individuals, and they appear in
+      exactly the form Wikipedia published them.
+    - We therefore do not anonymise. Anonymising a NER corpus would
+      destroy the labels we are trying to predict. We do not link entities
+      across sentences, build profiles of any person, or add any
+      information that was not already in the source text.
+    - Results are reported at the type level. No claim is made about any
+      individual named in the data.

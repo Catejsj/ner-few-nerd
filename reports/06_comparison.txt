@@ -1,0 +1,124 @@
+[1] HOW WE ARE SCORING
+    Level          entity, not token
+    Matching       EXACT - type, start token and end token must all match
+    A span that overlaps a gold entity but starts one token early counts
+    as a false positive AND leaves the gold entity as a false negative.
+    It is punished twice. That is the CoNLL convention and the strictest
+    reasonable reading; [4] separates those near-misses out so the
+    penalty is visible rather than hidden.
+
+    test sentences 37,648, gold entities 96,842
+
+[2] HEADLINE  (test set)
+    approach                 micro P   micro R  micro F1           95% CI  macro F1
+    Gazetteer                  0.266     0.477     0.342 [ 0.339, 0.345]     0.324
+    CRF                        0.665     0.635     0.650 [ 0.646, 0.653]     0.580
+    spaCy (pre-trained)        0.419     0.390     0.404 [ 0.400, 0.408]     0.233
+
+    Best micro F1: CRF at 0.650.
+    The intervals are narrow because the test set is large, so these
+    differences are real rather than noise.
+
+    micro averages over entities, so it is dominated by location, person
+    and organization, which are 69% of the test entities. macro averages
+    over the 8 types equally, so a model that ignores the rare types is
+    punished. We report both because they answer different questions:
+    micro is 'how often is this system right', macro is 'does it work
+    for every type'.
+
+[3] PER-TYPE F1  (all three side by side)
+    type             support    Gazetteer          CRF spaCy (pre-trained)
+    location          27,235        0.581        0.737        0.571
+    person            21,565        0.361        0.775        0.599
+    organization      19,078        0.250        0.571        0.267
+    other              9,558        0.349        0.463        0.029
+    product            6,231        0.283        0.444        0.075
+    building           5,007        0.342        0.543        0.000
+    event              4,104        0.361        0.514        0.145
+    art                4,064        0.066        0.597        0.174
+
+    No single approach wins everywhere - which is the argument for
+    reporting all three rather than picking one.
+
+[4] ERROR BREAKDOWN  (every gold entity and every prediction, categorised)
+    category                        Gazetteer                    CRF    spaCy (pre-trained)
+    correct                   46,189 ( 47.7%)        61,490 ( 63.5%)        37,789 ( 39.0%)
+    type error                 5,621 (  5.8%)        14,173 ( 14.6%)        19,541 ( 20.2%)
+    boundary error            16,507 ( 17.0%)         6,576 (  6.8%)        11,585 ( 12.0%)
+    type + boundary           13,333 ( 13.8%)         4,979 (  5.1%)        12,455 ( 12.9%)
+    missed                    15,192 ( 15.7%)         9,624 (  9.9%)        15,472 ( 16.0%)
+    spurious                  92,139 ( 95.1%)         6,670 (  6.9%)        10,009 ( 10.3%)
+
+    Percentages are of the gold entity count, so 'spurious' can exceed
+    100% - a model is free to predict more entities than exist.
+
+    Gazetteer: 15.7% of gold entities are invisible to it, and 30.8% are seen but mis-cut.
+    CRF: 9.9% of gold entities are invisible to it, and 11.9% are seen but mis-cut.
+    spaCy (pre-trained): 16.0% of gold entities are invisible to it, and 24.8% are seen but mis-cut.
+
+[5] CONFUSION - WHICH TYPES GET MISTAKEN FOR WHICH
+    Rows are the true type, columns what the system said. MISSED means
+    nothing was predicted there; the SPURIOUS row is predictions with no
+    gold entity underneath.
+
+    --- Gazetteer ---
+    true \ pred        art buildin   event locatio organiz   other  person product   MISSED
+    art              1,602      49      32     215     392     142     539      98      995
+    building           183   2,362      23     697     538      59     506     112      527
+    event              132      21   2,387     383     459     106     249      73      294
+    location           309     366     117  20,545     994     301   1,149     281    3,173
+    organization       557     361     230   2,221  11,228     307   1,205     457    2,512
+    other              101      39      38     504     301   5,726     294     134    2,421
+    person             173      54      83     776     433     226  16,001     148    3,671
+    product            114      66      34     277     747     226     323   2,845    1,599
+    SPURIOUS        26,108   1,342   1,162   6,866  27,919   8,498  16,379   3,865
+    worst confusions: organization->location (2,221), organization->person (1,205), location->person (1,149), location->organization (994)
+
+    --- CRF ---
+    true \ pred        art buildin   event locatio organiz   other  person product   MISSED
+    art              2,524      47      49     216     306      66     251     211      394
+    building            75   2,826      35     737     648      41     298      59      288
+    event               89      32   2,610     325     469      43     106      53      377
+    location           159     533     184  22,060   1,296     258   1,180     197    1,368
+    organization       323     384     297   1,741  12,429     213   1,397     398    1,896
+    other              139      28      68     715     462   4,509     505     223    2,909
+    person             186      70      61   1,000     691     142  18,225     126    1,064
+    product            318      48      53     336     731     179     355   2,883    1,328
+    SPURIOUS           135     177     251   1,901   1,659     930   1,176     441
+    worst confusions: organization->location (1,741), organization->person (1,397), location->organization (1,296), location->person (1,180)
+
+    --- spaCy (pre-trained) ---
+    true \ pred        art buildin   event locatio organiz   other  person product   MISSED
+    art              1,439       0      23     321     588      15     535     230      913
+    building            71       0      32   1,296   2,360       8     664      47      529
+    event              202       0   1,117     680   1,097      64     193      63      688
+    location           151       0      42  19,049   3,634      69   2,233     204    1,853
+    organization       244       0      70   2,305  12,095      29   1,726     174    2,435
+    other              210       0      49   1,274   1,829     284     954     148    4,810
+    person             175       0      24   1,278   2,991       9  14,878     133    2,077
+    product            221       0      23     496   1,968      52     792     512    2,167
+    SPURIOUS           399       0     214   3,019   4,092      95   1,785     405
+    worst confusions: location->organization (3,634), person->organization (2,991), building->organization (2,360), organization->location (2,305)
+
+[6] WHERE THE APPROACHES DISAGREE
+    Entities found by exactly one approach - what each one uniquely adds.
+    Gazetteer              finds  46,189 correctly,  8,648 of which no other approach finds
+    CRF                    finds  61,490 correctly, 15,026 of which no other approach finds
+    spaCy (pre-trained)    finds  37,789 correctly,  2,783 of which no other approach finds
+    ANY of the three       finds  75,496 (78.0% of all gold entities)
+    ALL three agree on      20,933 (21.6%)
+
+    A perfect combination of the three would reach 78.0% recall, against
+    63.5% for the best single approach. That gap is the argument for an ensemble,
+    and it is listed under future work.
+
+[7] EXAMPLES OF EACH ERROR TYPE  (from the best system)
+    boundary error  gold 'Grill Room' (building), predicted 'Grill Room of the Taft Hotel' (building)
+    boundary error  gold 'Taft Hotel' (building), predicted 'Grill Room of the Taft Hotel' (building)
+    type error      'George Hall and His Hotel Taft Orchestra' is organization, predicted building
+    boundary error  gold 'C-USA play' (event), predicted 'C-USA' (location)
+    missed          'V8 unit' (product) - nothing predicted here
+    type error      'Aljazeera' is organization, predicted location
+    type error      'Hypebeast' is organization, predicted location
+    missed          'Colchester' (location) - nothing predicted here
+    missed          'ammonia' (other) - nothing predicted here

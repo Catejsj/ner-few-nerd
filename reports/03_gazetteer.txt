@@ -1,0 +1,85 @@
+[0] CHOOSING THE ONE PARAMETER, ON VALIDATION
+    min_count is how many times a name must appear in training before it
+    is trusted. At 1, every one-off name enters the list, including words
+    that happen to be song titles ('It', 'Yesterday'), and they then match
+    everywhere. Raising it trades recall for precision.
+
+    Test is not touched here. The value is chosen on validation and used
+    once on test, which is the only honest order.
+
+     min_count    entries       P       R      F1
+             1    185,158   0.270   0.480   0.345
+             2     44,631   0.296   0.369   0.328
+             3     18,682   0.371   0.314   0.340
+             5      7,153   0.377   0.257   0.305
+            10      2,242   0.412   0.200   0.269
+
+    chosen min_count = 1  (validation micro F1 0.345)
+
+[1] THE GAZETTEER
+    built from       the 131,767 TRAINING sentences only
+    entries          185,158 distinct surface forms
+    min count        1 (a name must appear this often to be included)
+    matching         longest first, up to 8 tokens, no overlaps
+    case             respected
+
+    entries per type
+      person           46,916
+      organization     39,628
+      location         31,732
+      other            19,766
+      product          15,426
+      building         11,919
+      art              11,195
+      event             8,576
+
+[2] AMBIGUITY INSIDE THE GAZETTEER
+    8,125 surface forms appear with more than one type in
+    training (4.4% of entries). We keep the most frequent type,
+    so every one of these is a guaranteed error whenever the other
+    reading is the correct one.
+
+      United States              location 1331, organization 21, building 1
+      American                   location 1263, person 19, organization 12
+      British                    location 763, organization 23, other 2, building 1, person 1
+      London                     location 770, organization 4, art 3, product 3, person 1, building 1
+      French                     location 566, other 96, person 7, organization 6
+      California                 location 660, organization 6, building 3, product 2, person 1
+      England                    location 615, organization 34, person 1
+      New York                   location 642, organization 5, product 2, person 1
+      German                     location 547, other 86, organization 8, person 2
+      English                    other 341, location 275, person 7, organization 1
+
+    This is the structural weakness of the approach: a dictionary has no
+    context, so it cannot tell which reading is meant.
+
+[3] CEILING
+    55,977 of 96,842 test entity mentions (57.8%) have their
+    exact surface form in the gazetteer. The rest are names the training
+    data never contained, and no dictionary can find them.
+    So 42.2% recall is lost before matching even starts. This is the
+    number that explains the result below.
+
+[4] RESULT ON TEST  (entity level, exact span match)
+    type                 P       R      F1   support      TP      FP      FN
+    location         0.534   0.636   0.581    27,235  17,315  15,105   9,920
+    person           0.287   0.488   0.361    21,565  10,514  26,118  11,051
+    organization     0.180   0.405   0.250    19,078   7,735  35,179  11,343
+    other            0.282   0.459   0.349     9,558   4,388  11,179   5,170
+    product          0.251   0.323   0.283     6,231   2,011   5,994   4,220
+    building         0.356   0.329   0.342     5,007   1,648   2,984   3,359
+    event            0.361   0.360   0.361     4,104   1,476   2,608   2,628
+    art              0.038   0.271   0.066     4,064   1,102  28,167   2,962
+    micro avg        0.266   0.477   0.342    96,842
+    macro avg        0.286   0.409   0.324
+
+    micro F1 0.342, macro F1 0.324
+
+    The model fires 173,523 times and is right 46,189 of those.
+    Precision is BELOW recall, which is not what a dictionary is
+    supposed to do, and it is the most interesting thing in this
+    report. The cause is in [2]: a gazetteer built from real text
+    contains ordinary words that happen to be names of songs, films
+    and books. Once 'It' is in the list as an art entity it matches
+    every occurrence of the pronoun.
+    Worst offender: organization with 35,179 false positives against 7,735 correct.
