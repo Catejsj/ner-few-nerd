@@ -93,9 +93,10 @@ So the subsample is reproducible. Any fixed number would do; 42 is convention.
 **Why is recall higher than precision? That is backwards for a dictionary.**
 This is the most interesting thing in that report and worth volunteering. A
 gazetteer built from real text contains ordinary words that happen to be titles
-of songs, films and books. Once *It* is in the list as an `art` entity, it
-matches every occurrence of the pronoun. That is why `art` has huge false
-positives. A hand-curated gazetteer would behave the classic way; one learned
+of songs, films and books. *Today*, *Why* and *Hello* are all in ours as `art`,
+so they now match every ordinary use of those words. That is why `art` has huge
+false positives - 0.066 F1 - and why the gazetteer predicts 92,139 spurious
+entities against 96,842 real ones. A hand-curated gazetteer would behave the classic way; one learned
 from a corpus does not.
 
 **Why didn't raising `min_count` fix that?**

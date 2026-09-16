@@ -387,8 +387,8 @@ copied from that file after the final run.
 
 - The CRF wins every type — but *how far* it wins varies enormously
 - spaCy's **0.000 on building is structural**, not a failure of the model
-- The gazetteer's **0.066 on art** is the ordinary-words problem: *It*,
-  *Yesterday* and *Tonight* are all song titles
+- The gazetteer's **0.066 on art** is the ordinary-words problem: *Today*,
+  *Why* and *Hello* are all in its list as `art`, so they match everywhere
 
 ### Slide C: "The errors, categorised"
 
@@ -439,8 +439,10 @@ copied from that file after the final run.
 >
 > The row that surprised us is "spurious" for the gazetteer: ninety-five per
 > cent. It predicts almost as many entities that are not there as there are real
-> entities in the whole test set. That is the ordinary-words problem — once "It"
-> is in the dictionary as a song title, it matches every pronoun.
+> entities in the whole test set. That is the ordinary-words problem — "Today",
+> "Why" and "Hello" are all in its list as works of art, because somewhere in the
+> training data they were song titles. Now they match every ordinary use of those
+> words.
 >
 > And for the CRF, most mistakes are entities it *did* find and then labelled
 > wrongly — fifteen per cent — rather than entities it missed, which is ten per

@@ -104,7 +104,7 @@ def fig_per_type(data: dict) -> None:
     labels = [f"{t}\n{data[names[0]]['support'][t]:,}" for t in types]
     ax.set_xticks(x, labels, fontsize=9)
     ax.set_ylabel("entity-level F1")
-    ax.set_title("The three approaches fail on different types",
+    ax.set_title("The CRF wins every type; the other two swap places\ndepending on which type you ask about",
                  fontsize=12, loc="left", pad=30)
     ax.text(0, 1.015, "test entity count under each type; spaCy scores zero on "
                       "building because no OntoNotes label maps to it",
