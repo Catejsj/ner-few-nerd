@@ -13,9 +13,18 @@ Two slides.
 - **Parts E–G** are Q&A prep, where each number came from, and what I must not
   say because it belongs to someone else.
 
-**My job in one line:** build the three NER approaches the rubric asks for —
-a dictionary, a CRF, and a pre-trained model — and explain how each one is
-trained and why it is set up the way it is.
+**My job in one line:** build the three ways of finding names that the rubric
+asks for, and explain how each one works.
+
+**The one idea that holds it together — who did the learning:**
+
+| method | who learned it |
+|---|---|
+| **1. Gazetteer** (name list) | nobody — we just copied names into a list |
+| **2. CRF** | **us**, on our data |
+| **3. spaCy** | a company, on different text, before our project |
+
+Say that at the start and everything after it has somewhere to sit.
 
 **The scores belong to the evaluation person, not me.** I set the models up and
 hand over. See Part G.
@@ -24,201 +33,148 @@ hand over. See Part G.
 
 # PART A — for the slide maker
 
-**Two slides.** Slide 1 is a **two-column layout** — the two approaches we did
-not train, side by side. Slide 2 is full width because the picture needs it.
+Type exactly what is in the bullets. Nothing else goes on the slide.
 
 ---
 
 ## Slide 1 — TWO COLUMNS
 
-**Title of the slide:**
-
-> Two approaches that need no training
+**Slide title:** `Method 1 and Method 3: a name list, and a ready-made model`
 
 ### LEFT COLUMN
 
-**Column heading:** `1. Gazetteer — a dictionary`
+**Heading:** `Method 1 — Gazetteer (a name list)`
 
-- A **list of known names**, then look them up
-- Built from the **training sentences only** — using all the data would put the
-  test answers in the dictionary
-- **185,158** names, matched **longest phrase first**
-- No learning, no weights — the baseline the others must beat
-
-**Small monospace box under the bullets:**
-
-```
-"New York Times"  -> organization   (longest first)
-"New York"        -> would stop here, and be wrong
-```
-
-**Two red-flag lines:**
-
-- **4.4%** of names have **two types** — *Washington* is a person and a place
-- Only **57.8%** of test names appear in training at all
+- We collect every name in the training data → **185,158 names**
+- For a new sentence, look up the **longest match** first
+- Problem: **4.4%** of names have two meanings — *Washington* is a person and a place
+- Problem: only **57.8%** of test names appear in the training data at all
 
 ### RIGHT COLUMN
 
-**Column heading:** `3. spaCy — already trained by someone else`
+**Heading:** `Method 3 — spaCy (trained by someone else)`
 
-- `en_core_web_sm`, trained on **OntoNotes** — news, not Wikipedia
-- **Zero** Few-NERD sentences. We trained nothing
+- A ready-made model, trained on **news text**, before our project
+- It never saw our data. We only ran it
+- It cuts sentences into words differently from ours — **30.7%** disagree, so we hand it our words
+- It has **18** name-types, we have **8** → we matched them using set-aside data
+- Nothing matched our **building** type → spaCy scores **0.000** there
 
-**Small monospace box:**
-
-```
-Problem   its tokenizer disagrees with ours on 30.7% of sentences
-Fix       feed it our tokens - Doc(words=gold_tokens)
-
-Problem   it predicts 18 OntoNotes types, we have 8
-Fix       learn the mapping from validation, do not guess
-```
-
-**Then the finding — make this stand out, it is the best thing on the slide:**
-
-- We assumed `FAC` (airports, bridges) → `building`.
-  **The data said `FAC` → `location`.**
-- So **nothing maps to `building`** — spaCy scores **0.000** on it,
-  5,007 entities it cannot reach
-
-**No picture on this slide.** The two boxes are the visual. Keep the columns
-clearly separated — a vertical rule or real white space between them, not just a
-gap.
+No picture on this slide.
 
 ---
 
 ## Slide 2 — FULL WIDTH
 
-**Title of the slide:**
+**Slide title:** `Method 2: the model we trained ourselves`
 
-> Approach 2 — the CRF, the one we actually train
+- Decides the labels for the **whole sentence together**, not word by word
+- So it never produces an impossible combination
+- For each word it looks at **that word + 2 before + 2 after**
+- **34 clues per word**: capital letters, word shape, word endings, word type
+- Trained on **20,000 sentences**; settings picked on set-aside data
 
-**Bullets across the top, short — the picture does the work:**
-
-- Labels the **whole sentence at once**, not one word at a time
-- So it learns that `I-person` **cannot** follow `B-location`
-- Sees each word **plus the 2 words on each side**
-- **595,404** feature weights, fitted with L-BFGS
-- `c1 = 0.1`, `c2 = 0.1`, tuned on validation
-- Trained on **20,000** of 131,767 sentences — memory limit, not a choice
-
-**Picture:** `figures/fig5_crf_features.png`
-Full width, under the bullets. **This is the most important picture in my part.**
+**Picture:** `figures/fig5_crf_features.png`, full width, under the bullets.
 
 ---
 
-**If the deck has room and someone wants three slides**, split slide 1 back into
-two — gazetteer and spaCy each get their own, with the same content. Nothing
-needs rewriting; the columns just become slides.
-
 # PART B — what I say out loud
 
-About 4 minutes total. This is the shape, not a script to memorise.
+About 4 minutes. Say it in my own words; this is the shape.
 
-**Order on slide 1: gazetteer first (left), then spaCy (right), then move to
-slide 2 for the CRF.** Two shortcuts, then the one that works — the CRF is the
-payoff, so it goes last.
+## Opening — the map  (15 seconds)
 
-## Slide 1, left column — the gazetteer  (about 60 seconds)
+> There are three ways to find names in text, and the real difference between
+> them is simply **who did the learning**.
+>
+> The first one, nobody learned anything — we just wrote out a list.
+> The second one, we trained ourselves, on our data.
+> The third one was trained by a company, on different text, before this project
+> started.
+>
+> This slide has the list and the ready-made model. The next slide has the one we
+> trained.
 
-> My part is building the three approaches. They are different in kind, which is
-> the point of comparing them.
->
-> Two of them need no training at all, and I will take those together first.
-> The first is a gazetteer, which is just a dictionary. We go through the
-> training sentences, and every time there is a labelled entity we write down its
-> text and its type. "Barack Obama, person." "New York, location." That gives us
-> 185,000 names. Then for a new sentence we scan along looking for the longest
-> phrase that is in our list.
->
-> Longest first matters. If we matched shortest first, "New York Times" would be
-> tagged as just "New York", a location, and we would stop there and miss the
-> newspaper entirely.
->
-> The one thing I want to stress is that the dictionary is built from the
-> **training** sentences only. If we had built it from all the data, the test
-> answers would be sitting inside the dictionary and the score would be
-> meaningless. That is the easiest way to accidentally cheat in a project like
-> this.
->
-> It has two problems it cannot escape. Four per cent of the names have more than
-> one type — Washington is a person and a place — and a dictionary has no context
-> to choose with, so we take whichever was more common and accept being wrong
-> sometimes. And only fifty-eight per cent of the names in the test set appear in
-> the training data at all. The other forty-two per cent are names it has never
-> seen and cannot invent.
+## Slide 1, left — the name list  (60 seconds)
 
-## Slide 1, right column — spaCy  (about 80 seconds)
+> A gazetteer is just a list of names.
+>
+> We went through our training sentences, and every time a name was marked, we
+> wrote it down with its type. "Barack Obama — person." "New York — location."
+> That gave us 185,000 names.
+>
+> Then for a new sentence we slide along it and ask: is this phrase in my list?
+> We always try the longest phrase first. If we did not, "New York Times" would
+> come out as "New York" — a place instead of a newspaper.
+>
+> One thing matters a lot here: we only used the **training** sentences to build
+> the list. If we had used the test sentences too, the answers would be sitting
+> inside the list, and our score would be fake.
+>
+> It has two problems it cannot fix. Some names mean two things — "Washington" is
+> a person and a place — and a list has no way of telling which one you meant.
+> And most test names were never in the training data: only 58% of them appear
+> there. The other 42% are names it has simply never seen, and a list cannot
+> invent a name.
 
-> The other untrained one is spaCy's off-the-shelf model.
-> It was trained by spaCy on OntoNotes, which is news and telephone speech, and
-> it has never seen a single Few-NERD sentence. So part of what we are measuring
-> here is how far an off-the-shelf model transfers to a new domain and a new
-> label set.
->
-> Two things had to be fixed before it was a fair comparison.
->
-> First, tokenization. spaCy normally splits the text itself, and we measured
-> that its split disagrees with our corpus on thirty per cent of sentences. If we
-> had let it, its predicted positions would not line up with our gold positions,
-> and we would be measuring tokenizer disagreement instead of entity recognition.
-> So we feed it our tokens directly, which turns its tokenizer off.
->
-> Second, the labels do not match. spaCy predicts eighteen OntoNotes types and we
-> have eight. Some are obvious — PERSON is person. Others are not: NORP is
-> nationalities and religious groups, and there is no obvious home for it.
->
-> So rather than write the mapping by hand, we learned it. For each OntoNotes
-> label we looked at which of our types its correct spans actually line up with,
-> on the validation set, and mapped it there.
->
-> That produced the finding I would most like you to remember. We expected FAC —
-> facilities, so airports and bridges — to map to our "building" type. The data
-> said it maps to "location", because Few-NERD's annotators labelled facilities
-> as places more often than as buildings. Which means no OntoNotes label reaches
-> our building type at all, and spaCy scores exactly zero on it — five thousand
-> test entities it cannot touch no matter how good it is.
->
-> If we had written that mapping from intuition we would never have found out.
+## Slide 1, right — the ready-made model  (75 seconds)
 
-## Slide 2 — the CRF  (about 90 seconds)
+> The third method is spaCy. spaCy is a free language-processing library, and it
+> comes with a model that already knows how to find names. The spaCy team trained
+> it on news articles, long before this project. We did not train it at all — we
+> just ran it on our sentences and saw what it found.
+>
+> Two things had to be fixed before that was a fair test.
+>
+> First: spaCy cuts a sentence into words its own way, and our data was already
+> cut a different way. We checked, and they disagree on 30% of sentences. If we
+> let spaCy do the cutting, the positions it reports would not line up with the
+> positions in our answer key, and we would be measuring the cutting rather than
+> the name-finding. So we hand spaCy our words directly.
+>
+> Second: spaCy uses 18 name-types and our data uses 8, and they do not line up
+> one to one. So instead of guessing which goes with which, we used a set-aside
+> part of our data to check. When spaCy says "GPE", what does our data actually
+> call that thing? It calls it a location. So GPE becomes location.
+>
+> Doing it that way caught something we would have got wrong. spaCy has a type
+> called FAC, for facilities — airports, bridges, stadiums. We assumed that was
+> our "building" type. The data said no: our annotators call those things
+> locations. Which means nothing at all maps to "building", so spaCy scores zero
+> there — five thousand names it cannot get right, no matter how good it is.
+>
+> If we had written that matching by hand, we would never have found out.
 
-> Now the one we actually train: a Conditional Random Field.
+## Slide 2 — the one we trained  (90 seconds)
+
+> This is the model we trained ourselves. It is called a CRF.
 >
-> The important difference is that it does not label words one at a time. It
-> scores the whole sequence of labels for the sentence together, and then picks
-> the single best path through all the possibilities. That means it can learn
-> rules about label order — for example that an "inside-person" tag cannot follow
-> a "begin-location" tag, because that is not a thing that can happen. A
-> word-by-word classifier has no way to even express that.
+> The simplest way to say what it does: instead of deciding each word on its own,
+> it decides the labels for the **whole sentence together** and picks the best
+> combination. That matters, because some combinations are impossible — you
+> cannot have "middle of a person's name" right after "start of a place name". A
+> word-by-word method can produce that. This one learns not to.
 >
-> [Point at the picture.] This is what it sees for one word. We are labelling
-> "New". The blue band is the context window — it can see two words to the left
-> and two to the right.
+> [Point at the picture.] This is what it looks at for one word. We are labelling
+> "New". The blue band is what it is allowed to see: two words before and two
+> words after.
 >
-> From the word itself it takes: the word, its lowercase form, its lemma, its
-> shape — capital letters become X, so "New" becomes X-x-x — whether it starts
-> with a capital, whether it is all caps, whether it has digits, and its first
-> and last three letters, plus its part of speech.
+> For that one word it collects 34 small clues. The word itself. Whether it
+> starts with a capital. The shape of it — capitals become X, so "New" is X-x-x.
+> The last three letters. What kind of word it is. And then the same set of clues
+> for each of the four neighbours.
 >
-> Then it takes the same kind of information from the four surrounding words.
-> Thirty-four features for this one word, twenty of them from the context.
+> The neighbours are the whole point. "New" on its own tells you nothing — "new
+> car", "New York". What makes it a place is that "visited" comes before it and
+> "York" comes after. Those are two of the thirty-four clues, right there in the
+> list.
 >
-> And the context is the whole point. The word "New" on its own tells you almost
-> nothing — "new car", "New York". What tells the model this is the start of a
-> location is that "visited" comes before it and "York" comes after. Those are
-> literally two of the features in the list.
+> Training means going through 20,000 sentences and working out how much each
+> clue is worth. We used 20,000 rather than all 130,000 because the full set did
+> not fit in our computer's memory — so our result is a floor, not the best this
+> model could do.
 >
-> Training means finding a weight for each of those 595,000 feature-value pairs,
-> using L-BFGS. Two settings control how hard the model is pushed to keep those
-> weights small, and we tuned them on the validation set — never on test.
->
-> One thing to be upfront about: we trained on 20,000 of the 131,767 training
-> sentences. That is a memory limit on our machine, not a design decision. So our
-> CRF number is a floor, not a ceiling, and training on all of it is the first
-> item in our future work.
->
-> [Name] will now take you through what all three actually scored.
+> [Name] will now tell you how the three actually scored.
 
 ---
 
