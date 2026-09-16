@@ -264,6 +264,10 @@ after    Angela Merkel visited New York .
 
 # Part 5 — Model Design & Training (25 pts) — the three approaches
 
+**This part has its own full document: `docs/SLIDES_MODEL_TRAINING.md`** — exact
+slide bullets, spoken script, the figure explained, and Q&A. The summary below is
+the short version; that file is what the speaker should use.
+
 **Source:** `reports/03_gazetteer.txt`, `reports/04_crf.txt`,
 `reports/05_spacy.txt`, and `docs/TRAINING_CODE_BREAKDOWN.md` for the detail.
 
@@ -559,7 +563,7 @@ Every one of these is a real limitation of *our* work, not a generic one:
 | 7 | 4 | What we did NOT do, with the evidence table |
 | 8 | 4 | Mention replacement augmentation |
 | 9 | 5 | Approach 1 — gazetteer |
-| 10 | 5 | Approach 2 — CRF |
+| 10 | 5 | Approach 2 — CRF + `fig5_crf_features.png` |
 | 11 | 5 | Approach 3 — spaCy, and the FAC finding |
 | 12 | 6 | Scoring + headline figure |
 | 13 | 6 | Per-type figure |

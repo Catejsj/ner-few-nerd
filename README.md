@@ -40,7 +40,8 @@ mkdir -p data/raw && for s in train validation test; do curl -sL -o "data/raw/su
 | 5 | `cd scripts && ../.venv/bin/python approach_crf.py` | `models/crf.pkl`, `reports/04_crf.txt` |
 | 6 | `cd scripts && ../.venv/bin/python approach_spacy.py` | `reports/05_spacy.txt` |
 | 7 | `cd scripts && ../.venv/bin/python evaluate.py` | `reports/06_comparison.txt` |
-| 8 | `cd scripts && ../.venv/bin/python make_figures.py` | `figures/*.png` |
+| 8 | `cd scripts && ../.venv/bin/python make_figures.py` | `figures/fig1-4*.png` |
+| 9 | `cd scripts && ../.venv/bin/python make_figure_crf.py` | `figures/fig5_crf_features.png` |
 
 The approach scripts import `nerlib.py` as a sibling module, so run them from
 inside `scripts/`. Step 5 takes about 10 minutes; everything else is seconds to
@@ -120,6 +121,9 @@ scripts/           the pipeline
 
 - **`docs/PRESENTATION_PLAN.md`** — the whole presentation split one part per
   rubric criterion, with each person's slide bullets, script and sourced numbers.
+- **`docs/SLIDES_MODEL_TRAINING.md`** — the Model Design & Training part (rubric
+  criterion 5) in full: three slides, exact bullets for the slide maker, a spoken
+  script, the figure explained, Q&A prep, and what belongs to other speakers.
 - **`docs/TRAINING_CODE_BREAKDOWN.md`** — what each approach actually runs, line
   by line, and why each parameter has the value it has.
 - **`docs/ANNOTATION_AND_IAA.md`** — why we used an existing dataset, the
