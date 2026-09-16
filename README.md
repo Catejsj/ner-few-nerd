@@ -119,8 +119,11 @@ scripts/           the pipeline
 
 ## Documents
 
-- **`docs/PRESENTATION_PLAN.md`** — the whole presentation split one part per
-  rubric criterion, with each person's slide bullets, script and sourced numbers.
+- **`docs/PRESENTATION_STRUCTURE.md`** — the rubric's 8 criteria mapped onto 7
+  parts, each anchored to the script, report and figure that back it. The
+  reference document for picking parts.
+- **`docs/PRESENTATION_PLAN.md`** — the same split, but with each person's slide
+  bullets and spoken script written out.
 - **`docs/SLIDES_MODEL_TRAINING.md`** — the Model Design & Training part (rubric
   criterion 5) in full: three slides, exact bullets for the slide maker, a spoken
   script, the figure explained, Q&A prep, and what belongs to other speakers.
