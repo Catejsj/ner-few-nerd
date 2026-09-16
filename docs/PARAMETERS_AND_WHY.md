@@ -225,12 +225,25 @@ not world knowledge. It would **not** be acceptable for fine-tuning a language
 model, which implausible text can damage. We say this in the report ourselves.
 
 **Did it help?**
-Measured, not asserted: `scripts/augmentation_effect.py` reruns the CRF on the
-augmented file with the same features, the same tuning grid and the same test
-set, so the only difference is the training data. The result is in
-`reports/07_augmentation_effect.txt` — read it before the presentation and quote
-whichever way it went. A negative result honestly reported is worth more than a
-positive one quietly obtained.
+**No — and we measured it rather than assuming either way.** Same features, same
+tuning grid, same test set; only the training file differed.
+
+| | micro F1 | macro F1 |
+|---|---|---|
+| baseline (20,000) | 0.650 | 0.580 |
+| augmented (29,410) | 0.645 | 0.573 |
+
+Worse still, it hurt the **targeted** types most (−0.016 mean F1) and barely
+touched the others (−0.003). Splitting F1 explains it: on the targeted types
+precision fell **−0.099** while recall rose **+0.068**. Mention replacement
+multiplies entity names but leaves the surrounding context identical, so the
+model saw the same sentence frames repeatedly with different names in the slot,
+became over-confident that those frames mean *art*, and predicted them too
+freely.
+
+The defensible conclusion is specific, not general: for a feature-based model
+whose signal is mostly context, adding entity variety without adding context
+variety does not help. Full numbers in `reports/07_augmentation_effect.txt`.
 
 ---
 

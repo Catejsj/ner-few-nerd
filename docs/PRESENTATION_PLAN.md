@@ -217,7 +217,12 @@ after    Angela Merkel visited New York .
   one entity for another of the same type
 - Targeted the 3 rarest types → **20,000 → 29,410 sentences**, *art*, *event* and
   *building* **+200%** each
-- Effect on the CRF: see `reports/07_augmentation_effect.txt`
+- **We measured whether it worked. It did not: micro F1 0.650 → 0.645**
+- And it hurt the *targeted* types most (−0.016) while barely touching the rest
+  (−0.003) — the opposite of its purpose
+- **Why:** on those types precision fell **−0.099** while recall rose **+0.068**.
+  More entity names in the same unchanged contexts made the model over-confident
+  that those contexts mean *art* — it guessed more, and guessed wrong
 
 ### Say (about 2.5 minutes)
 

@@ -103,18 +103,28 @@ def main() -> None:
     say(f"    mean F1 change, non-targeted types  {other_change:>+7.3f}")
     say()
 
-    say("[4] ERROR SHAPE")
-    say("    Where the extra data changed what kind of mistake the model makes.")
-    say(f"    {'category':<18} {'baseline':>10} {'augmented':>11} {'change':>9}")
-    for category in ["correct", "type error", "boundary error",
-                     "type + boundary", "missed", "spurious"]:
-        b = base.get("errors", {}).get(category)
-        a = aug.get("errors", {}).get(category)
-        if b is None or a is None:
-            continue
-        say(f"    {category:<18} {b:>10,} {a:>11,} {a - b:>+9,}")
-    if "errors" not in base:
-        say("    (run scripts/evaluate.py to populate the error categories)")
+    say("[4] WHAT ACTUALLY CHANGED: PRECISION TRADED FOR RECALL")
+    say("    F1 hides the shape of the change. Split it:")
+    say()
+    say(f"    {'type':<14} {'P base':>8} {'P aug':>8} {'dP':>7}   "
+        f"{'R base':>8} {'R aug':>8} {'dR':>7}  targeted")
+    for label in sorted(base["support"], key=lambda t: -base["support"][t]):
+        b, a = base["per_type"][label], aug["per_type"][label]
+        mark = "yes" if label in TARGETED else ""
+        say(f"    {label:<14} {b['precision']:>8.3f} {a['precision']:>8.3f} "
+            f"{a['precision'] - b['precision']:>+7.3f}   "
+            f"{b['recall']:>8.3f} {a['recall']:>8.3f} "
+            f"{a['recall'] - b['recall']:>+7.3f}  {mark}")
+    say()
+    dp = sum(aug["per_type"][t]["precision"] - base["per_type"][t]["precision"]
+             for t in TARGETED) / len(TARGETED)
+    dr = sum(aug["per_type"][t]["recall"] - base["per_type"][t]["recall"]
+             for t in TARGETED) / len(TARGETED)
+    say(f"    On the targeted types: precision {dp:+.3f}, recall {dr:+.3f}.")
+    say("    Augmentation did exactly what it was supposed to do mechanically -")
+    say("    the model became much more willing to predict the rare types, and")
+    say("    found more of them. It just guessed wrong more often than it guessed")
+    say("    right, so F1 fell.")
     say()
 
     say("[5] VERDICT")
@@ -129,12 +139,24 @@ def main() -> None:
         say("    around the entity are unchanged, so the model sees the same")
         say("    evidence repeatedly and over-weights it.")
     else:
-        say(f"    No meaningful change: micro F1 {delta:+.3f}, "
+        say(f"    No overall gain: micro F1 {delta:+.3f}, "
             f"macro F1 {macro_delta:+.3f}.")
-        say("    A null result, reported as found. Mention replacement adds new")
-        say("    entity surface forms but no new context, and context is most of")
-        say("    what this CRF learns from - so a small effect is what theory")
-        say("    would predict.")
+        say()
+        say(f"    And it cost the targeted types most ({targeted_change:+.3f}) "
+            f"while barely")
+        say(f"    touching the rest ({other_change:+.3f}) - the opposite of what "
+            "it was for.")
+        say()
+        say("    The explanation is in [4]. Mention replacement multiplies the")
+        say("    entity surface forms but leaves the surrounding words unchanged,")
+        say("    so the model sees the same contexts three times with different")
+        say("    names in the slot. It learns 'this context frame means art' more")
+        say("    confidently than the evidence supports, predicts art more often,")
+        say("    and loses more precision than it gains in recall.")
+        say()
+        say("    This is a real result about the method, not a failed experiment:")
+        say("    for a feature-based model whose signal is mostly context, adding")
+        say("    entity variety without adding context variety does not help.")
     say()
     say("    Either way, this is the honest answer to 'did your augmentation")
     say("    work', and having measured it is worth more than asserting it.")

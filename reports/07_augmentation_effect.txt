@@ -1,0 +1,74 @@
+[1] WHAT IS BEING COMPARED
+    Two CRF runs, identical except for the training file:
+      baseline   train_small      20,000 sentences
+      augmented  train_small_aug  29,410 sentences (+9,410 by mention replacement)
+    Same feature set, same c1/c2 grid tuned on the same validation
+    sentences, same test set, same scorer. Any difference is the
+    augmentation. Targeted types: art, building, event.
+
+[2] OVERALL
+                        P        R       F1
+    baseline        0.665    0.635    0.650   micro
+    augmented       0.660    0.631    0.645   micro
+    change         -0.005   -0.004   -0.005
+
+    baseline        0.618    0.554    0.580   macro
+    augmented       0.593    0.568    0.573   macro
+    change                           -0.008
+
+    macro is the number to watch: augmentation targeted the rare types,
+    and macro weights every type equally, so that is where an effect
+    should appear first.
+
+[3] PER TYPE
+    type             support   base F1    aug F1    change  targeted
+    location          27,235     0.737     0.737    +0.000  
+    person            21,565     0.775     0.777    +0.002  
+    organization      19,078     0.571     0.568    -0.003  
+    other              9,558     0.463     0.454    -0.009  
+    product            6,231     0.444     0.440    -0.004  
+    building           5,007     0.543     0.540    -0.003  yes
+    event              4,104     0.514     0.495    -0.018  yes
+    art                4,064     0.597     0.571    -0.026  yes
+
+    mean F1 change, targeted types       -0.016
+    mean F1 change, non-targeted types   -0.003
+
+[4] WHAT ACTUALLY CHANGED: PRECISION TRADED FOR RECALL
+    F1 hides the shape of the change. Split it:
+
+    type             P base    P aug      dP     R base    R aug      dR  targeted
+    location          0.716    0.729  +0.014      0.760    0.745  -0.015  
+    person            0.744    0.756  +0.012      0.807    0.798  -0.009  
+    organization      0.586    0.608  +0.022      0.556    0.533  -0.024  
+    other             0.585    0.590  +0.005      0.383    0.368  -0.014  
+    product           0.529    0.572  +0.043      0.382    0.357  -0.025  
+    building          0.612    0.508  -0.103      0.488    0.576  +0.088  yes
+    event             0.560    0.474  -0.086      0.475    0.519  +0.044  yes
+    art               0.615    0.509  -0.106      0.579    0.651  +0.071  yes
+
+    On the targeted types: precision -0.099, recall +0.068.
+    Augmentation did exactly what it was supposed to do mechanically -
+    the model became much more willing to predict the rare types, and
+    found more of them. It just guessed wrong more often than it guessed
+    right, so F1 fell.
+
+[5] VERDICT
+    No overall gain: micro F1 -0.005, macro F1 -0.008.
+
+    And it cost the targeted types most (-0.016) while barely
+    touching the rest (-0.003) - the opposite of what it was for.
+
+    The explanation is in [4]. Mention replacement multiplies the
+    entity surface forms but leaves the surrounding words unchanged,
+    so the model sees the same contexts three times with different
+    names in the slot. It learns 'this context frame means art' more
+    confidently than the evidence supports, predicts art more often,
+    and loses more precision than it gains in recall.
+
+    This is a real result about the method, not a failed experiment:
+    for a feature-based model whose signal is mostly context, adding
+    entity variety without adding context variety does not help.
+
+    Either way, this is the honest answer to 'did your augmentation
+    work', and having measured it is worth more than asserting it.
