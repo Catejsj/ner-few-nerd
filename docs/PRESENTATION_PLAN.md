@@ -14,11 +14,11 @@ comparison. If it has six, fold part 1 into part 7's introduction.
 | 2 | | Corpus Collection & Legal / Ethical | 10 | 2 | 2 min |
 | 3 | | Annotation Quality & Inter-Annotator Agreement | 10 | 2 | 2 min |
 | 4 | | Text Preprocessing & Augmentation | 15 | 2 | 2.5 min |
-| 5 | | Model Design & Training — all three approaches | 25 | 3 | 4 min |
+| 5 | **Seth** | Model Design & Training — all three approaches | 25 | 2 | 4 min |
 | 6 | | Evaluation & Error Analysis | 25 | 3 | 4 min |
 | 7 | | Limitations, Future Work, Conclusion + deck owner | 10 | 2 | 2 min |
 
-**15 slides, about 18 minutes.** Parts 5 and 6 carry half the marks between
+**14 slides, about 18 minutes.** Parts 5 and 6 carry half the marks between
 them — give those to the two most confident speakers.
 
 Every number below has a report file next to it. If a number is not in this
@@ -562,13 +562,12 @@ Every one of these is a real limitation of *our* work, not a generic one:
 | 6 | 3 | BIO representation, with the worked example |
 | 7 | 4 | What we did NOT do, with the evidence table |
 | 8 | 4 | Mention replacement augmentation |
-| 9 | 5 | Approach 1 — gazetteer |
-| 10 | 5 | Approach 2 — CRF + `fig5_crf_features.png` |
-| 11 | 5 | Approach 3 — spaCy, and the FAC finding |
-| 12 | 6 | Scoring + headline figure |
-| 13 | 6 | Per-type figure |
-| 14 | 6 | Error breakdown + confusion matrix |
-| 15 | 7 | Limitations, future work, conclusion, references |
+| 9 | 5 | Two untrained approaches side by side — gazetteer / spaCy + the FAC finding |
+| 10 | 5 | The CRF, the one we train + `fig5_crf_features.png` |
+| 11 | 6 | Scoring + headline figure |
+| 12 | 6 | Per-type figure |
+| 13 | 6 | Error breakdown + confusion matrix |
+| 14 | 7 | Limitations, future work, conclusion, references |
 
 **Backup slides:** the CRF's learned transition weights, the full spaCy mapping
 table with purity, the gazetteer ambiguity examples, the augmentation worked

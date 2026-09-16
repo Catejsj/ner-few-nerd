@@ -3,7 +3,7 @@
 My part of the NER presentation. Rubric criterion 5, **25 points** — the joint
 biggest section, along with evaluation.
 
-Three slides.
+Two slides.
 
 - **Part A** is for whoever builds the slides. Copy the boxes onto the slide.
   Nothing else goes on.
@@ -24,106 +24,107 @@ hand over. See Part G.
 
 # PART A — for the slide maker
 
-## Slide 1
-
-**Title of the slide:**
-
-> Approach 1 — the Gazetteer (a dictionary)
-
-**Put these bullets on the slide:**
-
-- The oldest NER method: a **list of known names**, then look them up
-- Built from the **training sentences only** — using all the data would put the
-  test answers in the dictionary
-- **185,158** names collected
-- Matches **longest phrase first**, up to 8 words
-- **No learning, no weights** — this is the baseline the other two must beat
-
-**Then this box, in a monospace font, as the worked example:**
-
-```
-sentence   ... he joined the New York Times in 1998 ...
-
-longest first   "New York Times"  -> found, tag as organization
-if shortest     "New York"        -> would stop here, and be wrong
-```
-
-**Two problems to list underneath, short:**
-
-- **8,125 names (4.4%) have more than one type** — *Washington* is a person
-  and a place. A dictionary has no context to choose with
-- **Only 57.8%** of test names appear in the training data at all
-
-**No picture on this slide.** The example box is the visual.
+**Two slides.** Slide 1 is a **two-column layout** — the two approaches we did
+not train, side by side. Slide 2 is full width because the picture needs it.
 
 ---
 
-## Slide 2
+## Slide 1 — TWO COLUMNS
 
 **Title of the slide:**
 
-> Approach 2 — the CRF (the one we actually train)
+> Two approaches that need no training
 
-**Put these bullets on the slide (keep them short, the picture does the work):**
+### LEFT COLUMN
+
+**Column heading:** `1. Gazetteer — a dictionary`
+
+- A **list of known names**, then look them up
+- Built from the **training sentences only** — using all the data would put the
+  test answers in the dictionary
+- **185,158** names, matched **longest phrase first**
+- No learning, no weights — the baseline the others must beat
+
+**Small monospace box under the bullets:**
+
+```
+"New York Times"  -> organization   (longest first)
+"New York"        -> would stop here, and be wrong
+```
+
+**Two red-flag lines:**
+
+- **4.4%** of names have **two types** — *Washington* is a person and a place
+- Only **57.8%** of test names appear in training at all
+
+### RIGHT COLUMN
+
+**Column heading:** `3. spaCy — already trained by someone else`
+
+- `en_core_web_sm`, trained on **OntoNotes** — news, not Wikipedia
+- **Zero** Few-NERD sentences. We trained nothing
+
+**Small monospace box:**
+
+```
+Problem   its tokenizer disagrees with ours on 30.7% of sentences
+Fix       feed it our tokens - Doc(words=gold_tokens)
+
+Problem   it predicts 18 OntoNotes types, we have 8
+Fix       learn the mapping from validation, do not guess
+```
+
+**Then the finding — make this stand out, it is the best thing on the slide:**
+
+- We assumed `FAC` (airports, bridges) → `building`.
+  **The data said `FAC` → `location`.**
+- So **nothing maps to `building`** — spaCy scores **0.000** on it,
+  5,007 entities it cannot reach
+
+**No picture on this slide.** The two boxes are the visual. Keep the columns
+clearly separated — a vertical rule or real white space between them, not just a
+gap.
+
+---
+
+## Slide 2 — FULL WIDTH
+
+**Title of the slide:**
+
+> Approach 2 — the CRF, the one we actually train
+
+**Bullets across the top, short — the picture does the work:**
 
 - Labels the **whole sentence at once**, not one word at a time
 - So it learns that `I-person` **cannot** follow `B-location`
 - Sees each word **plus the 2 words on each side**
 - **595,404** feature weights, fitted with L-BFGS
-- Two settings tuned on validation: **c1 = 0.1, c2 = 0.1**
-- Trained on **20,000** of 131,767 sentences — a memory limit, not a choice
+- `c1 = 0.1`, `c2 = 0.1`, tuned on validation
+- Trained on **20,000** of 131,767 sentences — memory limit, not a choice
 
 **Picture:** `figures/fig5_crf_features.png`
-Full width, under the bullets. **This is the most important picture in my part** —
-it shows a real sentence, the window, and the actual features.
+Full width, under the bullets. **This is the most important picture in my part.**
 
 ---
 
-## Slide 3
-
-**Title of the slide:**
-
-> Approach 3 — spaCy, already trained by someone else
-
-**Put these bullets on the slide:**
-
-- `en_core_web_sm`, trained on **OntoNotes 5** — news and phone calls, not
-  Wikipedia
-- **Zero** Few-NERD sentences used. Nothing was trained by us
-- Two problems had to be fixed before the comparison was fair:
-
-**Then this two-row box:**
-
-```
-Problem 1   spaCy's own tokenizer disagrees with our corpus
-            on 30.7% of sentences
-Fix         feed it our tokens directly - Doc(words=gold_tokens)
-
-Problem 2   spaCy predicts 18 OntoNotes types, we have 8
-Fix         learn the mapping from validation data, do not guess it
-```
-
-**Then the finding, as the last bullet — make it stand out:**
-
-- We assumed `FAC` (airports, bridges) → `building`. **The data said
-  `FAC` → `location`.** Few-NERD's annotators call facilities *places*
-- So **nothing maps to `building`** — spaCy scores exactly **0.000** on it,
-  5,007 test entities it cannot reach
-
-**No picture.** The two boxes are enough for one slide.
-
----
+**If the deck has room and someone wants three slides**, split slide 1 back into
+two — gazetteer and spaCy each get their own, with the same content. Nothing
+needs rewriting; the columns just become slides.
 
 # PART B — what I say out loud
 
-About 90 seconds per slide, 4 minutes total. This is the shape, not a script to
-memorise.
+About 4 minutes total. This is the shape, not a script to memorise.
 
-## Slide 1 script — the gazetteer
+**Order on slide 1: gazetteer first (left), then spaCy (right), then move to
+slide 2 for the CRF.** Two shortcuts, then the one that works — the CRF is the
+payoff, so it goes last.
+
+## Slide 1, left column — the gazetteer  (about 60 seconds)
 
 > My part is building the three approaches. They are different in kind, which is
 > the point of comparing them.
 >
+> Two of them need no training at all, and I will take those together first.
 > The first is a gazetteer, which is just a dictionary. We go through the
 > training sentences, and every time there is a labelled entity we write down its
 > text and its type. "Barack Obama, person." "New York, location." That gives us
@@ -147,10 +148,42 @@ memorise.
 > the training data at all. The other forty-two per cent are names it has never
 > seen and cannot invent.
 
-## Slide 2 script — the CRF
+## Slide 1, right column — spaCy  (about 80 seconds)
 
-> The second approach is a Conditional Random Field, and this is the one we
-> actually train.
+> The other untrained one is spaCy's off-the-shelf model.
+> It was trained by spaCy on OntoNotes, which is news and telephone speech, and
+> it has never seen a single Few-NERD sentence. So part of what we are measuring
+> here is how far an off-the-shelf model transfers to a new domain and a new
+> label set.
+>
+> Two things had to be fixed before it was a fair comparison.
+>
+> First, tokenization. spaCy normally splits the text itself, and we measured
+> that its split disagrees with our corpus on thirty per cent of sentences. If we
+> had let it, its predicted positions would not line up with our gold positions,
+> and we would be measuring tokenizer disagreement instead of entity recognition.
+> So we feed it our tokens directly, which turns its tokenizer off.
+>
+> Second, the labels do not match. spaCy predicts eighteen OntoNotes types and we
+> have eight. Some are obvious — PERSON is person. Others are not: NORP is
+> nationalities and religious groups, and there is no obvious home for it.
+>
+> So rather than write the mapping by hand, we learned it. For each OntoNotes
+> label we looked at which of our types its correct spans actually line up with,
+> on the validation set, and mapped it there.
+>
+> That produced the finding I would most like you to remember. We expected FAC —
+> facilities, so airports and bridges — to map to our "building" type. The data
+> said it maps to "location", because Few-NERD's annotators labelled facilities
+> as places more often than as buildings. Which means no OntoNotes label reaches
+> our building type at all, and spaCy scores exactly zero on it — five thousand
+> test entities it cannot touch no matter how good it is.
+>
+> If we had written that mapping from intuition we would never have found out.
+
+## Slide 2 — the CRF  (about 90 seconds)
+
+> Now the one we actually train: a Conditional Random Field.
 >
 > The important difference is that it does not label words one at a time. It
 > scores the whole sequence of labels for the sentence together, and then picks
@@ -184,39 +217,6 @@ memorise.
 > sentences. That is a memory limit on our machine, not a design decision. So our
 > CRF number is a floor, not a ceiling, and training on all of it is the first
 > item in our future work.
-
-## Slide 3 script — spaCy
-
-> The third approach is spaCy's pre-trained model, and we trained nothing at all.
-> It was trained by spaCy on OntoNotes, which is news and telephone speech, and
-> it has never seen a single Few-NERD sentence. So part of what we are measuring
-> here is how far an off-the-shelf model transfers to a new domain and a new
-> label set.
->
-> Two things had to be fixed before it was a fair comparison.
->
-> First, tokenization. spaCy normally splits the text itself, and we measured
-> that its split disagrees with our corpus on thirty per cent of sentences. If we
-> had let it, its predicted positions would not line up with our gold positions,
-> and we would be measuring tokenizer disagreement instead of entity recognition.
-> So we feed it our tokens directly, which turns its tokenizer off.
->
-> Second, the labels do not match. spaCy predicts eighteen OntoNotes types and we
-> have eight. Some are obvious — PERSON is person. Others are not: NORP is
-> nationalities and religious groups, and there is no obvious home for it.
->
-> So rather than write the mapping by hand, we learned it. For each OntoNotes
-> label we looked at which of our types its correct spans actually line up with,
-> on the validation set, and mapped it there.
->
-> That produced the finding I would most like you to remember. We expected FAC —
-> facilities, so airports and bridges — to map to our "building" type. The data
-> said it maps to "location", because Few-NERD's annotators labelled facilities
-> as places more often than as buildings. Which means no OntoNotes label reaches
-> our building type at all, and spaCy scores exactly zero on it — five thousand
-> test entities it cannot touch no matter how good it is.
->
-> If we had written that mapping from intuition we would never have found out.
 >
 > [Name] will now take you through what all three actually scored.
 
